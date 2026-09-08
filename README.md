@@ -43,13 +43,13 @@ WAHA Core           Flow Builder     Contacts UI         Bot Admin           Sim
 Run this command on your destination server (Ubuntu, Debian, CentOS, Rocky Linux, AlmaLinux):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<YOUR_GITHUB_USER>/<YOUR_REPO_NAME>/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmdosamasokrat-svg/whatsapp/main/install.sh | bash
 ```
 
 Or clone and run manually:
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USER>/<YOUR_REPO_NAME>.git /opt/waha
+git clone https://github.com/ahmdosamasokrat-svg/whatsapp.git /opt/waha
 cd /opt/waha
 chmod +x install.sh backup.sh restore.sh
 ./install.sh
@@ -97,12 +97,7 @@ cd /opt/waha
 # Set default branch
 git branch -M main
 
-# Add your GitHub remote URL (replace with your repo link):
-# HTTPS:
-git remote add origin https://github.com/<YOUR_USERNAME>/<YOUR_REPO_NAME>.git
-# OR SSH:
-# git remote add origin git@github.com:<YOUR_USERNAME>/<YOUR_REPO_NAME>.git
-
+git remote add origin https://github.com/ahmdosamasokrat-svg/whatsapp.git
 # Push to GitHub
 git push -u origin main
 ```

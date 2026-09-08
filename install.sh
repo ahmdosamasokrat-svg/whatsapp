@@ -22,7 +22,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 INSTALL_DIR="/opt/waha"
-DEFAULT_REPO_URL="https://github.com/your-username/waha-suite.git"
+DEFAULT_REPO_URL="https://github.com/ahmdosamasokrat-svg/whatsapp.git"
 
 echo -e "${CYAN}${BOLD}"
 cat << "EOF"
