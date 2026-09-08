@@ -38,6 +38,18 @@ echo -e "${NC}"
 echo -e "${BLUE}==============================================================${NC}"
 echo -e "${BOLD} Starting WAHA Suite Installation${NC}"
 echo -e "${BLUE}==============================================================${NC}"
+get_env_val() {
+    local key="$1"
+    local default_val="${2:-}"
+    local val
+    val=$(grep "^${key}=" .env 2>/dev/null | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"' || true)
+    if [ -n "$val" ]; then
+        echo "$val"
+    else
+        echo "$default_val"
+    fi
+}
+
 
 # 1. Root check
 if [ "$(id -u)" -ne 0 ]; then
@@ -212,9 +224,8 @@ if [ "$WAHA_READY" = true ]; then
     echo -e "${GREEN}[+] WAHA HTTP API core is UP and running on port 2000.${NC}"
     
     # Configure default session webhook
-    API_KEY=$(grep '^WAHA_API_KEY=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
-    SESSION_NAME=$(grep '^WAHA_SESSION=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
-    SESSION_NAME="${SESSION_NAME:-test}"
+    API_KEY=$(get_env_val "WAHA_API_KEY" "")
+    SESSION_NAME=$(get_env_val "WAHA_SESSION" "test")
 
     # Check if session exists or start it
     SESSION_STATUS=$(curl -s -H "X-Api-Key: $API_KEY" http://127.0.0.1:2000/api/sessions | jq -r ".[] | select(.name==\"$SESSION_NAME\") | .status" 2>/dev/null || echo "")
@@ -274,10 +285,10 @@ SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 [ -z "$SERVER_IP" ] && SERVER_IP="127.0.0.1"
 
 # Read passwords from .env
-API_KEY=$(grep '^WAHA_API_KEY=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
-DASH_USER=$(grep '^WAHA_DASHBOARD_USERNAME=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
-DASH_PASS=$(grep '^WAHA_DASHBOARD_PASSWORD=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
-BOT_ADMIN_PASS=$(grep '^BOT_ADMIN_PASSWORD=' .env | cut -d= -f2- | tr -d '\r' | tr -d "'" | tr -d '"')
+API_KEY=$(get_env_val "WAHA_API_KEY" "")
+DASH_USER=$(get_env_val "WAHA_DASHBOARD_USERNAME" "admin")
+DASH_PASS=$(get_env_val "WAHA_DASHBOARD_PASSWORD" "(configured in .env)")
+BOT_ADMIN_PASS=$(get_env_val "BOT_ADMIN_PASSWORD" "Admin@123")
 
 echo ""
 echo -e "${GREEN}${BOLD}==============================================================${NC}"
