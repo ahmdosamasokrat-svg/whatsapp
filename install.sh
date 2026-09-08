@@ -130,17 +130,12 @@ if [ "$RUNNING_INSIDE_REPO" = false ]; then
     else
         REPO_INPUT=""
         if [ -t 0 ]; then
-            read -r -p "Enter your GitHub repository URL (press Enter for current folder): " REPO_INPUT
+            read -r -p "Enter your GitHub repository URL (press Enter for default: ${DEFAULT_REPO_URL}): " REPO_INPUT
         fi
-        if [ -n "$REPO_INPUT" ]; then
-            echo -e "${CYAN}[+] Cloning ${REPO_INPUT} into ${INSTALL_DIR}...${NC}"
-            git clone "$REPO_INPUT" "$INSTALL_DIR"
-            cd "$INSTALL_DIR"
-        else
-            echo -e "${CYAN}[+] Copying files to ${INSTALL_DIR}...${NC}"
-            cp -r ./* "$INSTALL_DIR/" 2>/dev/null || true
-            cd "$INSTALL_DIR"
-        fi
+        REPO_TO_CLONE="${REPO_INPUT:-$DEFAULT_REPO_URL}"
+        echo -e "${CYAN}[+] Cloning repository (${REPO_TO_CLONE}) into ${INSTALL_DIR}...${NC}"
+        git clone "$REPO_TO_CLONE" "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
     fi
 else
     cd "$INSTALL_DIR"
