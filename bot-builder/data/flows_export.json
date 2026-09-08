@@ -1,0 +1,411 @@
+[
+  {
+    "id": 1,
+    "name": "Main Welcome Flow",
+    "description": "Greeting flow with interactive menu for Sales, Technical Support, and Location",
+    "enabled": true,
+    "priority": 10,
+    "is_default": false,
+    "trigger_type": "contains",
+    "trigger_value": "hello,hi,مرحبا,السلام",
+    "nodes": [
+      {
+        "id": "node_1",
+        "type": "start",
+        "title": "Incoming Message",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "data": {
+          "trigger_type": "contains",
+          "trigger_value": "hello,hi,مرحبا,السلام"
+        }
+      },
+      {
+        "id": "node_2",
+        "type": "send_text",
+        "title": "Welcome Greeting",
+        "position": {
+          "x": 380,
+          "y": 200
+        },
+        "data": {
+          "message": "Welcome to Sokrat Tech 👋\nHow can we help you today?"
+        }
+      },
+      {
+        "id": "node_3",
+        "type": "menu",
+        "title": "Main Menu Options",
+        "position": {
+          "x": 660,
+          "y": 200
+        },
+        "data": {
+          "message": "Please choose:\n\n1 - Sales\n2 - Technical Support\n3 - Location",
+          "options": [
+            {
+              "id": "opt_1",
+              "label": "1 - Sales",
+              "value": "1",
+              "pattern": "1|sales|مبيعات"
+            },
+            {
+              "id": "opt_2",
+              "label": "2 - Technical Support",
+              "value": "2",
+              "pattern": "2|support|دعم|صيانة"
+            },
+            {
+              "id": "opt_3",
+              "label": "3 - Location",
+              "value": "3",
+              "pattern": "3|location|موقع|عنوان"
+            }
+          ]
+        }
+      },
+      {
+        "id": "node_4",
+        "type": "send_text",
+        "title": "Sales Question",
+        "position": {
+          "x": 1000,
+          "y": 80
+        },
+        "data": {
+          "message": "Please tell us what product or service you are interested in."
+        }
+      },
+      {
+        "id": "node_5",
+        "type": "human_handoff",
+        "title": "Transfer to Sales Team",
+        "position": {
+          "x": 1280,
+          "y": 80
+        },
+        "data": {
+          "notify_message": "Transferred to human sales agent."
+        }
+      },
+      {
+        "id": "node_6",
+        "type": "send_text",
+        "title": "Support Question",
+        "position": {
+          "x": 1000,
+          "y": 220
+        },
+        "data": {
+          "message": "Please describe your technical problem or question."
+        }
+      },
+      {
+        "id": "node_7",
+        "type": "wait_for_reply",
+        "title": "Wait for Problem Description",
+        "position": {
+          "x": 1280,
+          "y": 220
+        },
+        "data": {
+          "variable_name": "problem_description"
+        }
+      },
+      {
+        "id": "node_8",
+        "type": "send_text",
+        "title": "Support Confirmation",
+        "position": {
+          "x": 1560,
+          "y": 220
+        },
+        "data": {
+          "message": "Thank you {{contact.name}}! Our support team has logged your issue: \"{{conversation.problem_description}}\" and will respond shortly."
+        }
+      },
+      {
+        "id": "node_9",
+        "type": "send_text",
+        "title": "Location Info",
+        "position": {
+          "x": 1000,
+          "y": 380
+        },
+        "data": {
+          "message": "📍 Our Location:\nBuilding 14, Tech Park, Cairo, Egypt\nWorking Hours: Sun-Thu 9:00 AM - 5:00 PM"
+        }
+      },
+      {
+        "id": "node_10",
+        "type": "end",
+        "title": "End Conversation",
+        "position": {
+          "x": 1280,
+          "y": 380
+        },
+        "data": {}
+      },
+      {
+        "id": "node_11",
+        "type": "send_text",
+        "title": "Invalid Selection",
+        "position": {
+          "x": 1000,
+          "y": 520
+        },
+        "data": {
+          "message": "Invalid option. Please choose 1, 2, or 3."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_1_2",
+        "source": "node_1",
+        "target": "node_2"
+      },
+      {
+        "id": "e_2_3",
+        "source": "node_2",
+        "target": "node_3"
+      },
+      {
+        "id": "e_3_opt_1",
+        "source": "node_3",
+        "sourceHandle": "opt_1",
+        "target": "node_4"
+      },
+      {
+        "id": "e_4_5",
+        "source": "node_4",
+        "target": "node_5"
+      },
+      {
+        "id": "e_3_opt_2",
+        "source": "node_3",
+        "sourceHandle": "opt_2",
+        "target": "node_6"
+      },
+      {
+        "id": "e_6_7",
+        "source": "node_6",
+        "target": "node_7"
+      },
+      {
+        "id": "e_7_8",
+        "source": "node_7",
+        "target": "node_8"
+      },
+      {
+        "id": "e_3_opt_3",
+        "source": "node_3",
+        "sourceHandle": "opt_3",
+        "target": "node_9"
+      },
+      {
+        "id": "e_9_10",
+        "source": "node_9",
+        "target": "node_10"
+      },
+      {
+        "id": "e_3_fallback",
+        "source": "node_3",
+        "sourceHandle": "otherwise",
+        "target": "node_11"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Default Fallback Flow",
+    "description": "Executed when no other flow trigger matches the incoming message",
+    "enabled": true,
+    "priority": 1000,
+    "is_default": true,
+    "trigger_type": "any",
+    "trigger_value": "",
+    "nodes": [
+      {
+        "id": "fb_1",
+        "type": "start",
+        "title": "Any Incoming Message",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "data": {
+          "trigger_type": "any",
+          "trigger_value": ""
+        }
+      },
+      {
+        "id": "fb_2",
+        "type": "send_text",
+        "title": "Fallback Response",
+        "position": {
+          "x": 380,
+          "y": 200
+        },
+        "data": {
+          "message": "I did not understand your request.\n\nPlease type *hello* to see the main menu options."
+        }
+      },
+      {
+        "id": "fb_3",
+        "type": "end",
+        "title": "End",
+        "position": {
+          "x": 660,
+          "y": 200
+        },
+        "data": {}
+      }
+    ],
+    "edges": [
+      {
+        "id": "fb_e1_2",
+        "source": "fb_1",
+        "target": "fb_2"
+      },
+      {
+        "id": "fb_2_3",
+        "source": "fb_2",
+        "target": "fb_3"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "test",
+    "description": "",
+    "enabled": true,
+    "priority": 15,
+    "is_default": false,
+    "trigger_type": "exact",
+    "trigger_value": "تفاصيل",
+    "nodes": [
+      {
+        "id": "node_start",
+        "type": "start",
+        "title": "Incoming Message",
+        "position": {
+          "x": 100,
+          "y": 200
+        },
+        "data": {
+          "trigger_type": "exact",
+          "trigger_value": "تفاصيل"
+        }
+      },
+      {
+        "id": "node_1788853798815",
+        "type": "send_text",
+        "title": "Send Text",
+        "position": {
+          "x": 390,
+          "y": 200
+        },
+        "data": {
+          "message": "مرحباً بيك معاك احمد من سقراط ازاي اقدر اساعدك"
+        }
+      },
+      {
+        "id": "node_1788853886894",
+        "type": "menu",
+        "title": "Menu / Choice",
+        "position": {
+          "x": 750,
+          "y": 110
+        },
+        "data": {
+          "message": "اختار واحد من الخدمات",
+          "options": [
+            {
+              "id": "opt_1",
+              "label": "كول سنتر",
+              "value": "1",
+              "pattern": "1"
+            },
+            {
+              "id": "opt_2",
+              "label": "erp ",
+              "value": "2",
+              "pattern": "2"
+            }
+          ]
+        }
+      },
+      {
+        "id": "node_1788853975853",
+        "type": "send_text",
+        "title": "Send Text",
+        "position": {
+          "x": 1020,
+          "y": 330
+        },
+        "data": {
+          "message": "سعر ال erp 15000"
+        }
+      },
+      {
+        "id": "node_1788854439846",
+        "type": "send_text",
+        "title": "Send Text",
+        "position": {
+          "x": 960,
+          "y": 460
+        },
+        "data": {
+          "message": "test"
+        }
+      },
+      {
+        "id": "node_1788854536089",
+        "type": "send_image",
+        "title": "Send Image",
+        "position": {
+          "x": 1040,
+          "y": 160
+        },
+        "data": {
+          "image_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlaxef4SniDWZoDjiCm4IPZ1Qr_Onf5wiyaZWoKKBJi24VJ1Qk3-hS4vE&s=10"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_node_start_node_1788853798815_default_1788853835605",
+        "source": "node_start",
+        "target": "node_1788853798815",
+        "sourceHandle": null
+      },
+      {
+        "id": "e_node_1788853798815_node_1788853886894_default_1788853891636",
+        "source": "node_1788853798815",
+        "target": "node_1788853886894",
+        "sourceHandle": null
+      },
+      {
+        "id": "e_node_1788853886894_node_1788853975853_opt_2_1788853978915",
+        "source": "node_1788853886894",
+        "target": "node_1788853975853",
+        "sourceHandle": "opt_2"
+      },
+      {
+        "id": "e_node_1788853886894_node_1788854439846_otherwise_1788854446286",
+        "source": "node_1788853886894",
+        "target": "node_1788854439846",
+        "sourceHandle": "otherwise"
+      },
+      {
+        "id": "e_node_1788853886894_node_1788854536089_opt_1_1788854540009",
+        "source": "node_1788853886894",
+        "target": "node_1788854536089",
+        "sourceHandle": "opt_1"
+      }
+    ]
+  }
+]

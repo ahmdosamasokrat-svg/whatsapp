@@ -1,0 +1,23 @@
+services:
+  bot-builder:
+    build: .
+    container_name: waha-bot-builder
+    restart: unless-stopped
+    ports:
+      - "2004:2004"
+    environment:
+      - WAHA_URL=http://waha:3000
+      - WAHA_SESSION=test
+      - DB_PATH=/app/data/bot.db
+    env_file:
+      - /opt/waha/.env
+    volumes:
+      - ./data:/app/data
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    networks:
+      - waha_default
+
+networks:
+  waha_default:
+    external: true

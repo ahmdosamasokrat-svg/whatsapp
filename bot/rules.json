@@ -1,0 +1,13 @@
+{
+  "exact": {
+    "hello": "Hello! How can I help you?",
+    "hi": "Hello! How can I help you?",
+    "السلام عليكم": "وعليكم السلام، أهلاً بحضرتك 👋"
+  },
+
+  "contains": {
+    "price": "Please tell me which product you would like the price for.",
+    "support": "Technical support will assist you shortly.",
+    "مواعيد": "مواعيد العمل من 9 صباحاً حتى 5 مساءً."
+  }
+}

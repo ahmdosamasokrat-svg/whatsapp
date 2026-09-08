@@ -1,0 +1,86 @@
+# ==============================================================================
+# Git Ignore Rules for WAHA Suite
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Secrets & Environment Configurations
+# ------------------------------------------------------------------------------
+.env
+*.env
+*.secret
+
+# ------------------------------------------------------------------------------
+# CRITICAL: WhatsApp Private Authentication Sessions & SQLite Databases
+# DO NOT commit WhatsApp session keys, tokens, or credentials!
+# ------------------------------------------------------------------------------
+sessions/
+.sessions/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.session.config.json*
+creds.json
+session-*.json
+identity-key-*.json
+sender-key-*.json
+lid-mapping-*.json
+device-list-*.json
+tctoken-*.json
+
+# ------------------------------------------------------------------------------
+# WhatsApp Received & Sent Media
+# ------------------------------------------------------------------------------
+media/
+.media/
+*.oga
+*.ogg
+*.mp3
+*.mp4
+*.jpeg
+*.jpg
+*.png
+*.webp
+*.docx
+*.pdf
+
+# ------------------------------------------------------------------------------
+# Live Bot Database & Runtime Data
+# Note: flows_export.json is tracked so default flows are preserved.
+# ------------------------------------------------------------------------------
+bot-builder/data/*.db
+bot-builder/data/*.db-wal
+bot-builder/data/*.db-shm
+data/*.db
+*.db
+*.db-shm
+*.db-wal
+
+# ------------------------------------------------------------------------------
+# Python Cache & Artifacts
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# ------------------------------------------------------------------------------
+# Editor, OS & Temporary Files
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+*~
+.idea/
+.vscode/
+
+# ------------------------------------------------------------------------------
+# Backup Archives
+# ------------------------------------------------------------------------------
+waha-backup-*.tar.gz
+*.backup
+*.bak

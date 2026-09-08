@@ -1,0 +1,119 @@
+services:
+  # --------------------------------------------------------------------------
+  # 1. WAHA - WhatsApp HTTP API Core
+  # --------------------------------------------------------------------------
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: waha
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${WAHA_PORT:-2000}:3000"
+    volumes:
+      - ./sessions:/app/.sessions
+      - ./media:/app/.media
+    networks:
+      - waha_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/ping || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --------------------------------------------------------------------------
+  # 2. Bot Flow Builder (Visual Canvas + Execution Engine + Simulator)
+  # --------------------------------------------------------------------------
+  bot-builder:
+    build:
+      context: ./bot-builder
+      dockerfile: Dockerfile
+    container_name: waha-bot-builder
+    restart: unless-stopped
+    ports:
+      - "${BOT_BUILDER_PORT:-2004}:2004"
+    environment:
+      - WAHA_URL=http://waha:3000
+      - WAHA_SESSION=${WAHA_SESSION:-test}
+      - DB_PATH=/app/data/bot.db
+    env_file:
+      - .env
+    volumes:
+      - ./bot-builder/data:/app/data
+      - ./bot-builder/backend:/app/backend
+      - ./bot-builder/frontend:/app/frontend
+    depends_on:
+      - waha
+    networks:
+      - waha_network
+
+  # --------------------------------------------------------------------------
+  # 3. Contacts UI (WhatsApp Contacts & LID Normalization Viewer)
+  # --------------------------------------------------------------------------
+  contacts-ui:
+    build:
+      context: ./contacts-ui
+      dockerfile: Dockerfile
+    container_name: waha-contacts-ui
+    restart: unless-stopped
+    ports:
+      - "${CONTACTS_UI_PORT:-2001}:2001"
+    environment:
+      - WAHA_URL=http://waha:3000
+      - WAHA_SESSION=${WAHA_SESSION:-test}
+    env_file:
+      - .env
+    depends_on:
+      - waha
+    networks:
+      - waha_network
+
+  # --------------------------------------------------------------------------
+  # 4. Bot Admin (Keyword Rules & Trigger Management Panel)
+  # --------------------------------------------------------------------------
+  bot-admin:
+    build:
+      context: ./bot-admin
+      dockerfile: Dockerfile
+    container_name: waha-bot-admin
+    restart: unless-stopped
+    ports:
+      - "${BOT_ADMIN_PORT:-2003}:2003"
+    environment:
+      - BOT_ADMIN_PASSWORD=${BOT_ADMIN_PASSWORD:-Admin@123}
+      - BOT_ADMIN_SECRET=${BOT_ADMIN_SECRET:-change-me-secret-key-32-chars}
+    env_file:
+      - .env
+    volumes:
+      - ./bot/rules.json:/data/rules.json
+    networks:
+      - waha_network
+
+  # --------------------------------------------------------------------------
+  # 5. Simple Bot (Direct Keyword Trigger Autoresponder)
+  # --------------------------------------------------------------------------
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: waha-bot
+    restart: unless-stopped
+    ports:
+      - "${BOT_PORT:-2002}:2002"
+    environment:
+      - WAHA_URL=http://waha:3000
+      - WAHA_SESSION=${WAHA_SESSION:-test}
+    env_file:
+      - .env
+    volumes:
+      - ./bot/rules.json:/app/rules.json:ro
+    depends_on:
+      - waha
+    networks:
+      - waha_network
+
+networks:
+  waha_network:
+    name: waha_network
+    driver: bridge

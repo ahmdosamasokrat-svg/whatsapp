@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Bot Flow Builder</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- TOP HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <i class="fa-brands fa-whatsapp logo-icon"></i>
+        <div class="logo-text">
+          <span class="brand-title">Bot Flow Builder</span>
+          <span class="brand-subtitle">WAHA Integration</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <button class="nav-btn active" data-page="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+        <button class="nav-btn" data-page="flows"><i class="fa-solid fa-diagram-project"></i> Flows</button>
+        <button class="nav-btn" data-page="contacts"><i class="fa-solid fa-address-book"></i> Contacts</button>
+        <button class="nav-btn" data-page="conversations"><i class="fa-solid fa-comments"></i> Conversations</button>
+        <button class="nav-btn" data-page="logs"><i class="fa-solid fa-clock-rotate-left"></i> Logs</button>
+        <button class="nav-btn" data-page="settings"><i class="fa-solid fa-gear"></i> Settings</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="session-badge" id="sessionBadge">
+        <span class="pulse-dot"></span>
+        <span id="sessionStatusText">WAHA: Checking...</span>
+      </div>
+      <div class="global-bot-toggle">
+        <span class="toggle-label">Global Bot:</span>
+        <label class="switch">
+          <input type="checkbox" id="globalBotSwitch" checked>
+          <span class="slider round"></span>
+        </label>
+        <span class="status-tag" id="botStatusTag">ON</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="app-main">
+
+    <!-- PAGE: DASHBOARD -->
+    <section id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h2>Dashboard Overview</h2>
+          <p class="subtitle">Monitor WhatsApp bot activity, active flows, and live conversation routing</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openNewFlowModal()"><i class="fa-solid fa-plus"></i> New Flow</button>
+          <button class="btn btn-secondary" onclick="loadDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon bg-green"><i class="fa-brands fa-whatsapp"></i></div>
+          <div class="stat-content">
+            <span class="stat-title">Bot Status</span>
+            <h3 id="statBotStatus" class="text-green">Active</h3>
+            <span class="stat-sub" id="statSessionName">Session: test</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-blue"><i class="fa-solid fa-diagram-project"></i></div>
+          <div class="stat-content">
+            <span class="stat-title">Bot Flows</span>
+            <h3 id="statFlows">0 / 0</h3>
+            <span class="stat-sub">Active / Total</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-purple"><i class="fa-solid fa-comments"></i></div>
+          <div class="stat-content">
+            <span class="stat-title">Active Conversations</span>
+            <h3 id="statConversations">0</h3>
+            <span class="stat-sub" id="statConvSub">0 waiting • 0 human</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-orange"><i class="fa-solid fa-user-group"></i></div>
+          <div class="stat-content">
+            <span class="stat-title">Contacts</span>
+            <h3 id="statContacts">0</h3>
+            <span class="stat-sub" id="statBotDisabledContacts">0 paused for human</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-teal"><i class="fa-solid fa-paper-plane"></i></div>
+          <div class="stat-content">
+            <span class="stat-title">Total Messages</span>
+            <h3 id="statMessages">0</h3>
+            <span class="stat-sub" id="statMsgBreakdown">↓ 0 incoming • ↑ 0 outgoing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Flow List & Activity Feed -->
+      <div class="dashboard-grid">
+        <div class="card flex-1">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-bolt text-yellow"></i> Active Conversation Flows</h3>
+            <button class="btn btn-sm btn-outline" onclick="switchPage('flows')">View All</button>
+          </div>
+          <div class="card-body p-0">
+            <div id="dashFlowsList" class="dash-list">
+              <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading flows...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card flex-1">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-list-check text-blue"></i> Live Activity Feed</h3>
+            <button class="btn btn-sm btn-outline" onclick="switchPage('logs')">Full Logs</button>
+          </div>
+          <div class="card-body p-0">
+            <div id="dashLogsList" class="dash-list">
+              <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading activity...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: FLOWS LIST -->
+    <section id="page-flows" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Conversation Flows</h2>
+          <p class="subtitle">Create and manage visual conversation flows for incoming WhatsApp messages</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="openImportFlowModal()"><i class="fa-solid fa-file-import"></i> Import Flow</button>
+          <button class="btn btn-primary" onclick="openNewFlowModal()"><i class="fa-solid fa-plus"></i> New Flow</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th width="50">Status</th>
+                <th>Flow Name</th>
+                <th>Trigger</th>
+                <th>Priority</th>
+                <th>Nodes</th>
+                <th>Updated</th>
+                <th width="200" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="flowsTableBody">
+              <tr><td colspan="7" class="text-center p-4">Loading flows...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: FLOW BUILDER (CANVAS) -->
+    <section id="page-builder" class="page p-0">
+      <!-- Canvas Top Toolbar -->
+      <div class="builder-toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-sm btn-outline" onclick="switchPage('flows')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <div class="flow-title-box">
+            <input type="text" id="builderFlowName" class="flow-name-input" placeholder="Flow Name">
+            <span class="flow-version-tag" id="builderFlowVersion">v1</span>
+          </div>
+          <div class="flow-settings-inline">
+            <label>Priority: <input type="number" id="builderFlowPriority" class="input-sm w-16" value="10"></label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="builderFlowIsDefault"> Fallback Flow
+            </label>
+          </div>
+        </div>
+
+        <div class="toolbar-center">
+          <div class="save-status-indicator" id="saveStatusIndicator">
+            <i class="fa-solid fa-circle-check text-green"></i> <span>Saved</span>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <button class="btn btn-sm btn-outline" onclick="validateCurrentFlow()"><i class="fa-solid fa-circle-check"></i> Validate</button>
+          <button class="btn btn-sm btn-outline" onclick="openSimulatorModal()"><i class="fa-solid fa-play text-green"></i> Simulator</button>
+          <button class="btn btn-sm btn-outline" onclick="openLiveTestModal()"><i class="fa-brands fa-whatsapp text-green"></i> Live Test</button>
+          <button class="btn btn-sm btn-outline" onclick="openVersionsModal()"><i class="fa-solid fa-clock-rotate-left"></i> Versions</button>
+          <button class="btn btn-sm btn-outline" onclick="exportCurrentFlow()"><i class="fa-solid fa-file-export"></i> Export</button>
+          <button class="btn btn-sm btn-primary" onclick="saveCurrentFlow(true)"><i class="fa-solid fa-floppy-disk"></i> Save Flow</button>
+          <label class="switch switch-sm" title="Enable/Disable Flow">
+            <input type="checkbox" id="builderFlowEnabled" checked>
+            <span class="slider round"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Builder Workspace -->
+      <div class="builder-workspace">
+        <!-- Left: Node Palette -->
+        <aside class="palette-panel">
+          <div class="palette-header">
+            <h4>Available Nodes</h4>
+            <span class="palette-hint">Drag or click to add</span>
+          </div>
+          <div class="palette-list">
+            <div class="palette-item" draggable="true" data-type="start" onclick="addNodeToCanvas('start')">
+              <div class="palette-icon bg-green"><i class="fa-solid fa-bolt"></i></div>
+              <div class="palette-info">
+                <strong>Incoming Message</strong>
+                <small>Flow trigger / start</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="send_text" onclick="addNodeToCanvas('send_text')">
+              <div class="palette-icon bg-blue"><i class="fa-solid fa-comment-dots"></i></div>
+              <div class="palette-info">
+                <strong>Send Text</strong>
+                <small>WhatsApp text reply</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="condition" onclick="addNodeToCanvas('condition')">
+              <div class="palette-icon bg-yellow"><i class="fa-solid fa-code-branch"></i></div>
+              <div class="palette-info">
+                <strong>Condition</strong>
+                <small>YES / NO Branching</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="menu" onclick="addNodeToCanvas('menu')">
+              <div class="palette-icon bg-purple"><i class="fa-solid fa-list-ol"></i></div>
+              <div class="palette-info">
+                <strong>Menu / Choice</strong>
+                <small>Numbered options & routes</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="wait_for_reply" onclick="addNodeToCanvas('wait_for_reply')">
+              <div class="palette-icon bg-orange"><i class="fa-solid fa-hourglass-half"></i></div>
+              <div class="palette-info">
+                <strong>Wait For Reply</strong>
+                <small>Pause flow for response</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="set_variable" onclick="addNodeToCanvas('set_variable')">
+              <div class="palette-icon bg-indigo"><i class="fa-solid fa-square-root-variable"></i></div>
+              <div class="palette-info">
+                <strong>Set Variable</strong>
+                <small>Store customer data</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="send_image" onclick="addNodeToCanvas('send_image')">
+              <div class="palette-icon bg-teal"><i class="fa-solid fa-image"></i></div>
+              <div class="palette-info">
+                <strong>Send Image</strong>
+                <small>Photo / media message</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="send_file" onclick="addNodeToCanvas('send_file')">
+              <div class="palette-icon bg-cyan"><i class="fa-solid fa-file-pdf"></i></div>
+              <div class="palette-info">
+                <strong>Send File</strong>
+                <small>Document attachment</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="delay" onclick="addNodeToCanvas('delay')">
+              <div class="palette-icon bg-gray"><i class="fa-solid fa-clock"></i></div>
+              <div class="palette-info">
+                <strong>Delay</strong>
+                <small>Wait 1-10 seconds</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="http_request" onclick="addNodeToCanvas('http_request')">
+              <div class="palette-icon bg-red"><i class="fa-solid fa-network-wired"></i></div>
+              <div class="palette-info">
+                <strong>HTTP Request</strong>
+                <small>Call external / internal API</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="human_handoff" onclick="addNodeToCanvas('human_handoff')">
+              <div class="palette-icon bg-pink"><i class="fa-solid fa-headset"></i></div>
+              <div class="palette-info">
+                <strong>Human Handoff</strong>
+                <small>Transfer chat to agent</small>
+              </div>
+            </div>
+
+            <div class="palette-item" draggable="true" data-type="end" onclick="addNodeToCanvas('end')">
+              <div class="palette-icon bg-dark"><i class="fa-solid fa-flag-checkered"></i></div>
+              <div class="palette-info">
+                <strong>End Flow</strong>
+                <small>Complete conversation</small>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center: Interactive Canvas -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <div class="canvas-controls">
+            <button class="ctrl-btn" onclick="canvasZoomIn()" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+            <button class="ctrl-btn" onclick="canvasZoomOut()" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+            <button class="ctrl-btn" onclick="canvasResetZoom()" title="Reset Zoom"><i class="fa-solid fa-expand"></i></button>
+            <button class="ctrl-btn" onclick="canvasAutoLayout()" title="Auto Layout"><i class="fa-solid fa-sitemap"></i></button>
+          </div>
+
+          <div class="canvas-container" id="canvasContainer">
+            <!-- SVG connection lines layer -->
+            <svg class="canvas-svg" id="canvasSvg">
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 8 5 L 0 9 z" fill="#3b82f6" />
+                </marker>
+                <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 8 5 L 0 9 z" fill="#10b981" />
+                </marker>
+              </defs>
+              <g id="edgesGroup"></g>
+              <path id="tempConnectionPath" class="temp-edge" d="" style="display:none;"></path>
+            </svg>
+
+            <!-- HTML Nodes Layer -->
+            <div class="nodes-layer" id="nodesLayer"></div>
+          </div>
+        </div>
+
+        <!-- Right: Node Configuration Inspector -->
+        <aside class="inspector-panel" id="inspectorPanel">
+          <div class="inspector-header">
+            <h4 id="inspectorTitle">Node Settings</h4>
+            <button class="btn-icon" onclick="deselectNode()"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="inspector-body" id="inspectorBody">
+            <div class="empty-inspector">
+              <i class="fa-solid fa-arrow-pointer text-muted"></i>
+              <p>Select a node on the canvas to configure its settings</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- PAGE: CONTACTS -->
+    <section id="page-contacts" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Contacts</h2>
+          <p class="subtitle">WhatsApp contacts synced from WAHA with LID normalization and human takeover controls</p>
+        </div>
+        <div class="header-actions">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="contactSearchInput" placeholder="Search phone, name, or LID..." oninput="debounceContactSearch()">
+          </div>
+          <button class="btn btn-primary" onclick="syncContacts()"><i class="fa-solid fa-arrows-rotate"></i> Sync from WAHA</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Contact Name</th>
+                <th>Normalized Phone</th>
+                <th>WAHA LID</th>
+                <th>Bot Automation</th>
+                <th>Last Active</th>
+                <th width="120" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+              <tr><td colspan="6" class="text-center p-4">Loading contacts...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: CONVERSATIONS -->
+    <section id="page-conversations" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Conversations</h2>
+          <p class="subtitle">Live conversation state, current flow position, and human agent takeover</p>
+        </div>
+        <div class="filter-tabs">
+          <button class="tab-btn active" onclick="filterConversations('all')">All</button>
+          <button class="tab-btn" onclick="filterConversations('active')">Active</button>
+          <button class="tab-btn" onclick="filterConversations('waiting_for_reply')">Waiting Reply</button>
+          <button class="tab-btn" onclick="filterConversations('human_mode')">Human Mode</button>
+        </div>
+      </div>
+
+      <div class="conversations-layout">
+        <!-- List of Conversations -->
+        <div class="conversations-sidebar card p-0">
+          <div id="conversationsList" class="conversations-list">
+            <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading conversations...</div>
+          </div>
+        </div>
+
+        <!-- Conversation Details and Transcript -->
+        <div class="conversation-detail card p-0" id="conversationDetailCard">
+          <div class="conv-empty-state" id="convEmptyState">
+            <i class="fa-solid fa-comments"></i>
+            <p>Select a conversation from the list to inspect variables and message history</p>
+          </div>
+
+          <div class="conv-content" id="convContent" style="display:none;">
+            <div class="conv-header">
+              <div class="conv-contact-info">
+                <h3 id="convContactName">Ahmed</h3>
+                <span id="convContactNumber" class="text-muted">+201281102350</span>
+                <span id="convStatusBadge" class="badge badge-blue">Waiting Reply</span>
+              </div>
+              <div class="conv-actions">
+                <button class="btn btn-sm btn-success" id="btnResumeBot" onclick="resumeCurrentConversationBot()"><i class="fa-solid fa-robot"></i> Resume Bot</button>
+                <button class="btn btn-sm btn-outline" onclick="resetCurrentConversation()"><i class="fa-solid fa-arrows-rotate"></i> Reset Flow</button>
+              </div>
+            </div>
+
+            <div class="conv-body">
+              <!-- Variables Box -->
+              <div class="conv-variables-box">
+                <div class="variables-header">
+                  <strong><i class="fa-solid fa-database"></i> Stored Conversation Variables</strong>
+                </div>
+                <div id="convVariablesList" class="variables-tags"></div>
+              </div>
+
+              <!-- Message History Transcript -->
+              <div class="chat-transcript" id="chatTranscript"></div>
+            </div>
+
+            <!-- Agent Live Chat Reply Bar -->
+            <div class="conv-reply-bar">
+              <div class="conv-reply-input-wrapper">
+                <textarea id="agentReplyInput" class="conv-reply-textarea" placeholder="Type a message to chat with this customer on WhatsApp... (Press Enter to send, Shift+Enter for new line)" rows="1" onkeydown="handleAgentReplyKey(event)"></textarea>
+              </div>
+              <button class="btn btn-success conv-reply-btn" id="btnSendAgentReply" onclick="sendAgentReply()" title="Send WhatsApp Message">
+                <i class="fa-solid fa-paper-plane"></i> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: LOGS -->
+    <section id="page-logs" class="page">
+      <div class="page-header">
+        <div>
+          <h2>System & Message Logs</h2>
+          <p class="subtitle">Complete audit trail of incoming messages, flow routing, node execution, and errors</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="clearAllLogs()"><i class="fa-solid fa-trash"></i> Clear Logs</button>
+          <button class="btn btn-secondary" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="logs-filter-bar">
+          <select id="logFilterDirection" onchange="loadLogs()" class="form-select">
+            <option value="">All Directions</option>
+            <option value="incoming">Incoming (From WhatsApp)</option>
+            <option value="outgoing">Outgoing (Sent to WhatsApp)</option>
+            <option value="system">System Events</option>
+            <option value="error">Errors</option>
+          </select>
+
+          <select id="logFilterEvent" onchange="loadLogs()" class="form-select">
+            <option value="">All Event Types</option>
+            <option value="incoming_message">Incoming Message</option>
+            <option value="outgoing_message">Outgoing Message</option>
+            <option value="flow_matched">Flow Matched</option>
+            <option value="condition_result">Condition Result</option>
+            <option value="node_resumed">Node Resumed</option>
+            <option value="variable_set">Variable Set</option>
+            <option value="human_handoff">Human Handoff</option>
+            <option value="http_request">HTTP Request</option>
+          </select>
+
+          <input type="text" id="logFilterContact" placeholder="Filter by phone number..." oninput="debounceLogsSearch()" class="form-input">
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th width="140">Timestamp</th>
+                <th width="100">Direction</th>
+                <th width="140">Contact</th>
+                <th width="160">Event</th>
+                <th>Message / Details</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <tr><td colspan="5" class="text-center p-4">Loading logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: SETTINGS -->
+    <section id="page-settings" class="page">
+      <div class="page-header">
+        <div>
+          <h2>Bot & WAHA Settings</h2>
+          <p class="subtitle">Configure engine parameters, default fallback flow, and connection parameters</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-sliders text-blue"></i> Bot Execution Rules</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Default Fallback Flow</label>
+              <select id="settingsDefaultFlow" class="form-select"></select>
+              <small class="form-hint">Flow executed when an incoming message does not match any keyword.</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Execution Steps per Message</label>
+              <input type="number" id="settingsMaxSteps" class="form-input" min="5" max="100" value="50">
+              <small class="form-hint">Prevents infinite loop transitions in recursive flows (default: 50).</small>
+            </div>
+
+            <div class="form-group">
+              <label>WhatsApp Groups Response Policy</label>
+              <select id="settingsGroupMode" class="form-select">
+                <option value="mentions_only">Respond ONLY when @mentioned (Recommended)</option>
+                <option value="all">Respond to all matching messages in groups</option>
+                <option value="disabled">Disabled (Ignore all group messages)</option>
+              </select>
+              <small class="form-hint">When set to "Only when @mentioned", the bot stays silent and only triggers when a group member @mentions it.</small>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-brands fa-whatsapp text-green"></i> WAHA Connection Status</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="info-label">WAHA Backend URL:</span>
+              <span class="info-value" id="settingsWahaUrl">http://waha:3000</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Active Session:</span>
+              <span class="info-value" id="settingsWahaSession">test</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Session Status:</span>
+              <span class="badge badge-green" id="settingsWahaStatus">WORKING</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">API Key:</span>
+              <span class="badge badge-blue" id="settingsWahaApiKey">Protected in Backend</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Webhook URL:</span>
+              <span class="info-value code-font" id="settingsWebhookUrl">http://waha-bot-builder:2004/webhook/waha</span>
+            </div>
+
+            <div class="alert alert-info mt-4">
+              <i class="fa-solid fa-circle-info"></i> The WAHA API key is securely loaded directly by the Python backend from server environment variables and is never exposed to browser client JavaScript.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+
+  <!-- Modal: New Flow -->
+  <div class="modal-overlay" id="newFlowModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create New Conversation Flow</h3>
+        <button class="btn-icon" onclick="closeModal('newFlowModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Flow Name *</label>
+          <input type="text" id="newFlowName" class="form-input" placeholder="e.g. Sales Inquiry Flow">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="newFlowDesc" class="form-input" rows="2" placeholder="Brief summary of flow purpose"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Trigger Type</label>
+            <select id="newFlowTriggerType" class="form-select">
+              <option value="contains">Contains Keyword</option>
+              <option value="exact">Exact Match</option>
+              <option value="starts_with">Starts With</option>
+              <option value="ends_with">Ends With</option>
+              <option value="regex">Regular Expression</option>
+              <option value="any">Any Message</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Trigger Value</label>
+            <input type="text" id="newFlowTriggerVal" class="form-input" placeholder="e.g. price, quote, cost">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Priority (Lower = Higher Priority)</label>
+            <input type="number" id="newFlowPriority" class="form-input" value="10">
+          </div>
+          <div class="form-group flex-1 d-flex align-center">
+            <label class="checkbox-label mt-4">
+              <input type="checkbox" id="newFlowIsDefault">
+              <span>Is Fallback Flow</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('newFlowModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCreateFlow()">Create & Open Editor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Import Flow -->
+  <div class="modal-overlay" id="importFlowModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Import Flow from JSON</h3>
+        <button class="btn-icon" onclick="closeModal('importFlowModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Paste Flow JSON or Choose File</label>
+          <input type="file" id="importFileInput" accept=".json" onchange="handleImportFile(event)" class="form-input mb-2">
+          <textarea id="importJsonText" class="form-input code-font" rows="10" placeholder="Paste exported flow JSON here..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('importFlowModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitImportFlow()">Import Flow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Flow Simulator -->
+  <div class="modal-overlay" id="simulatorModal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-vial text-green"></i> In-Memory Flow Simulator</h3>
+        <button class="btn-icon" onclick="closeModal('simulatorModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="simulator-layout">
+          <!-- Simulator Controls -->
+          <div class="sim-controls">
+            <div class="form-group">
+              <label>Simulated Contact Name</label>
+              <input type="text" id="simContactName" class="form-input" value="Ahmed">
+            </div>
+            <div class="form-group">
+              <label>Simulated Phone Number</label>
+              <input type="text" id="simContactNumber" class="form-input" value="201281102350">
+            </div>
+            <div class="form-group">
+              <label>Incoming Message Text</label>
+              <div class="d-flex gap-2">
+                <input type="text" id="simMessageInput" class="form-input" placeholder="e.g. hello, 1, support..." onkeydown="if(event.key==='Enter') runSimulationStep()">
+                <button class="btn btn-primary" onclick="runSimulationStep()"><i class="fa-solid fa-play"></i> Run</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-sm btn-outline w-full" onclick="resetSimulator()"><i class="fa-solid fa-arrows-rotate"></i> Reset Simulation Session</button>
+            </div>
+
+            <div class="sim-status-box mt-3">
+              <div><strong>Status:</strong> <span id="simStatusTag" class="badge badge-gray">Idle</span></div>
+              <div class="mt-1"><strong>Waiting Node:</strong> <span id="simWaitingNode">None</span></div>
+              <div class="mt-2"><strong>Session Variables:</strong></div>
+              <pre id="simVariablesJson" class="code-box mt-1">{}</pre>
+            </div>
+          </div>
+
+          <!-- Simulator Trace Stream -->
+          <div class="sim-trace-pane">
+            <h4>Execution Step-by-Step Trace</h4>
+            <div id="simTraceStream" class="sim-trace-list">
+              <div class="text-muted text-center p-4">Enter a message above and click "Run" to observe step transitions.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Live Test -->
+  <div class="modal-overlay" id="liveTestModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fa-brands fa-whatsapp text-green"></i> Live WhatsApp Test</h3>
+        <button class="btn-icon" onclick="closeModal('liveTestModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-3">
+          <i class="fa-solid fa-triangle-exclamation"></i> <strong>Live Test sends real messages</strong> through your connected WAHA session to the specified WhatsApp number.
+        </div>
+        <div class="form-group">
+          <label>Recipient WhatsApp Number (International format without +)</label>
+          <input type="text" id="liveTestNumber" class="form-input" placeholder="e.g. 201281102350">
+        </div>
+        <div class="form-group">
+          <label>Simulated Incoming Message</label>
+          <input type="text" id="liveTestMessage" class="form-input" value="hello" placeholder="e.g. hello">
+        </div>
+        <div id="liveTestResultBox" style="display:none;" class="mt-3">
+          <label>Response Result:</label>
+          <pre id="liveTestResultJson" class="code-box"></pre>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('liveTestModal')">Cancel</button>
+        <button class="btn btn-success" id="btnSendLiveTest" onclick="sendLiveTest()"><i class="fa-solid fa-paper-plane"></i> Send Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Flow Versions -->
+  <div class="modal-overlay" id="versionsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Version History</h3>
+        <button class="btn-icon" onclick="closeModal('versionsModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="versionsList" class="versions-list">
+          <div class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading versions...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Main JavaScript -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
