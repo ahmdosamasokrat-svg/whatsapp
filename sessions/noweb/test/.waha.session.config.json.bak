@@ -1,0 +1,1 @@
+{"noweb":{"markOnline":true,"store":{"enabled":true,"fullSync":false}},"webhooks":[{"url":"http://waha-bot:2002/webhook","events":["message"]}]}
