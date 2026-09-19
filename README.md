@@ -43,16 +43,16 @@ WAHA Core           Flow Builder     Contacts UI         Bot Admin           Sim
 Run this command on your destination server (Ubuntu, Debian, CentOS, Rocky Linux, AlmaLinux):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ahmdosamasokrat-svg/whatsapp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ahmdosamasokrat-svg/whatsapp/main/install.sh | sudo bash
 ```
 
 Or clone and run manually:
 
 ```bash
-git clone https://github.com/ahmdosamasokrat-svg/whatsapp.git /opt/waha
+sudo git clone https://github.com/ahmdosamasokrat-svg/whatsapp.git /opt/waha
 cd /opt/waha
-chmod +x install.sh backup.sh restore.sh
-./install.sh
+sudo chmod +x install.sh backup.sh restore.sh
+sudo ./install.sh
 ```
 
 ### What `install.sh` does automatically:
