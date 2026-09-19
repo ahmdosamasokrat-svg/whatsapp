@@ -123,23 +123,17 @@ echo -e "${GREEN}[+] Docker Compose: $(docker compose version)${NC}"
 
 # 6. Setup Directory and Clone if needed
 echo -e "${BLUE}[4/8] Setting up installation directory at ${INSTALL_DIR}...${NC}"
-if [ "$RUNNING_INSIDE_REPO" = false ]; then
-    mkdir -p "$INSTALL_DIR"
-    if [ -d "$INSTALL_DIR/.git" ]; then
-        echo -e "${CYAN}[+] Existing git repository found in ${INSTALL_DIR}. Pulling latest changes...${NC}"
-        cd "$INSTALL_DIR"
-        git pull || true
-    else
-        REPO_INPUT=""
-        if [ -t 0 ]; then
-            read -r -p "Enter your GitHub repository URL (press Enter for default: ${DEFAULT_REPO_URL}): " REPO_INPUT
-        fi
-        REPO_TO_CLONE="${REPO_INPUT:-$DEFAULT_REPO_URL}"
-        echo -e "${CYAN}[+] Cloning repository (${REPO_TO_CLONE}) into ${INSTALL_DIR}...${NC}"
-        git clone "$REPO_TO_CLONE" "$INSTALL_DIR"
-        cd "$INSTALL_DIR"
-    fi
-else
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR"
+
+if [ -d "$INSTALL_DIR/.git" ]; then
+    echo -e "${CYAN}[+] Existing git repository found in ${INSTALL_DIR}. Updating to latest code...${NC}"
+    git remote set-url origin "$DEFAULT_REPO_URL" 2>/dev/null || true
+    git fetch origin main 2>/dev/null || true
+    git reset --hard origin/main 2>/dev/null || git pull origin main 2>/dev/null || true
+elif [ "$RUNNING_INSIDE_REPO" = false ]; then
+    echo -e "${CYAN}[+] Cloning repository (${DEFAULT_REPO_URL}) into ${INSTALL_DIR}...${NC}"
+    git clone "$DEFAULT_REPO_URL" "$INSTALL_DIR"
     cd "$INSTALL_DIR"
 fi
 
@@ -202,8 +196,7 @@ fi
 # 9. Build and Launch Containers
 echo -e "${BLUE}[7/8] Building and starting WAHA Suite containers...${NC}"
 docker compose pull waha || true
-docker compose build
-docker compose up -d
+docker compose up -d --build --remove-orphans
 
 echo -e "${BLUE}[8/8] Checking service health & registering WAHA webhook...${NC}"
 

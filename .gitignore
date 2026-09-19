@@ -2,6 +2,11 @@
 # Git Ignore Rules for WAHA Suite
 # ==============================================================================
 
+# Environment Secrets
+.env
+.env.local
+.env.*.local
+
 # Python Cache & Artifacts
 __pycache__/
 *.py[cod]
@@ -21,8 +26,23 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Ephemeral SQLite runtime locks
+# WhatsApp Live Sessions & Media Data
+sessions/
+media/
+backups/
+*.tar.gz
+*.zip
+
+# Database files & SQLite runtime locks
+*.sqlite3
 *.sqlite3-shm
 *.sqlite3-wal
+*.db
 *.db-shm
 *.db-wal
+bot-builder/data/*.db
+bot-builder/data/*.sqlite3
+
+# Keep sample / seed flow files
+!bot-builder/data/flows_export.json
+!bot/rules.json
