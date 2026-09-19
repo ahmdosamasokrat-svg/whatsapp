@@ -547,6 +547,7 @@ function createNodeElement(node) {
   // Select Node
   el.addEventListener("mousedown", (e) => {
     if (e.target.classList.contains("node-port") || e.target.classList.contains("node-branch-port")) return;
+    e.stopPropagation();
     selectNode(node.id);
     startNodeDrag(node.id, e);
   });
@@ -616,28 +617,69 @@ function calculateBezierPath(x1, y1, x2, y2) {
 }
 
 // -------------------------------------------------------------
-// CANVAS INTERACTIVITY (PAN, ZOOM, DRAG, CONNECT)
+// CANVAS INTERACTIVITY (PAN, ZOOM, DRAG, CONNECT, PALETTE DROP)
 // -------------------------------------------------------------
 function setupCanvasEvents() {
   const wrapper = document.getElementById("canvasWrapper");
+  if (!wrapper) return;
 
-  // Pan canvas
+  // Track space key for space+drag panning
+  let isSpacePressed = false;
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
+      if (!isSpacePressed) {
+        isSpacePressed = true;
+        wrapper.style.cursor = "grab";
+      }
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "Space") {
+      isSpacePressed = false;
+      wrapper.style.cursor = "";
+    }
+  });
+
+  // Pan canvas on Mouse Down (Hold mouse on canvas background to move around)
   wrapper.addEventListener("mousedown", (e) => {
-    if (e.target === wrapper || e.target.id === "canvasSvg" || e.target.id === "nodesLayer") {
+    // If clicking a port, button, control, or inspector, ignore
+    if (e.target.closest(".node-port, .node-branch-port, .canvas-controls, .ctrl-btn, .inspector-panel")) return;
+
+    // If clicking on a node and not holding space/middle click, let node drag handle it
+    if (e.target.closest(".canvas-node, .flow-node") && e.button !== 1 && !isSpacePressed) {
+      return;
+    }
+
+    // Allow panning with Left click (0), Middle click (1), Right click (2), or Space+click
+    if (e.button === 0 || e.button === 1 || e.button === 2 || isSpacePressed) {
+      if (e.button === 2) {
+        e.preventDefault();
+      }
       deselectNode();
       state.canvas.isPanning = true;
       state.canvas.startX = e.clientX - state.canvas.panX;
       state.canvas.startY = e.clientY - state.canvas.panY;
       wrapper.classList.add("panning");
+      document.body.style.userSelect = "none";
     }
   });
 
+  // Prevent context menu when right-click panning
+  wrapper.addEventListener("contextmenu", (e) => {
+    if (state.canvas.isPanning || e.button === 2) {
+      e.preventDefault();
+    }
+  });
+
+  // Mouse Move: Pan, Node Drag, or Wire Draw
   window.addEventListener("mousemove", (e) => {
-    // Panning
+    // Canvas Panning (Moving around when mouse is held)
     if (state.canvas.isPanning) {
       state.canvas.panX = e.clientX - state.canvas.startX;
       state.canvas.panY = e.clientY - state.canvas.startY;
       updateCanvasTransform();
+      return;
     }
 
     // Node Dragging
@@ -664,15 +706,19 @@ function setupCanvasEvents() {
       const mouseX = (e.clientX - state.canvas.panX) / state.canvas.scale;
       const mouseY = (e.clientY - state.canvas.panY) / state.canvas.scale;
       const tempPath = document.getElementById("tempConnectionPath");
-      tempPath.style.display = "block";
-      tempPath.setAttribute("d", calculateBezierPath(state.connecting.startX, state.connecting.startY, mouseX, mouseY));
+      if (tempPath) {
+        tempPath.style.display = "block";
+        tempPath.setAttribute("d", calculateBezierPath(state.connecting.startX, state.connecting.startY, mouseX, mouseY));
+      }
     }
   });
 
+  // Mouse Up: Stop Panning, Stop Node Drag, Complete Wire
   window.addEventListener("mouseup", (e) => {
     if (state.canvas.isPanning) {
       state.canvas.isPanning = false;
       wrapper.classList.remove("panning");
+      document.body.style.userSelect = "";
     }
     if (state.draggingNode) {
       state.draggingNode = null;
@@ -687,16 +733,56 @@ function setupCanvasEvents() {
         }
       }
       state.connecting = null;
-      document.getElementById("tempConnectionPath").style.display = "none";
+      const tempPath = document.getElementById("tempConnectionPath");
+      if (tempPath) tempPath.style.display = "none";
     }
   });
 
-  // Zoom canvas with wheel
+  // Touch Panning for tablets / mobile
+  wrapper.addEventListener("touchstart", (e) => {
+    if (e.target.closest(".canvas-node, .flow-node, .node-port, .node-branch-port, .canvas-controls, .ctrl-btn")) return;
+    if (e.touches.length === 1) {
+      deselectNode();
+      state.canvas.isPanning = true;
+      state.canvas.startX = e.touches[0].clientX - state.canvas.panX;
+      state.canvas.startY = e.touches[0].clientY - state.canvas.panY;
+      wrapper.classList.add("panning");
+    }
+  }, { passive: true });
+
+  window.addEventListener("touchmove", (e) => {
+    if (state.canvas.isPanning && e.touches.length === 1) {
+      state.canvas.panX = e.touches[0].clientX - state.canvas.startX;
+      state.canvas.panY = e.touches[0].clientY - state.canvas.startY;
+      updateCanvasTransform();
+    }
+  }, { passive: true });
+
+  window.addEventListener("touchend", () => {
+    if (state.canvas.isPanning) {
+      state.canvas.isPanning = false;
+      wrapper.classList.remove("panning");
+    }
+  });
+
+  // Zoom canvas with wheel centered on cursor
   wrapper.addEventListener("wheel", (e) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-    setCanvasZoom(state.canvas.scale * zoomFactor);
-  });
+    const rect = wrapper.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY < 0 ? 1.09 : 0.91;
+    const oldScale = state.canvas.scale;
+    const newScale = Math.min(Math.max(oldScale * zoomFactor, 0.25), 2.5);
+
+    // Zoom towards mouse position
+    state.canvas.panX = mouseX - (mouseX - state.canvas.panX) * (newScale / oldScale);
+    state.canvas.panY = mouseY - (mouseY - state.canvas.panY) * (newScale / oldScale);
+    state.canvas.scale = newScale;
+
+    updateCanvasTransform();
+  }, { passive: false });
 
   // Connect port mousedown delegation
   wrapper.addEventListener("mousedown", (e) => {
@@ -715,15 +801,25 @@ function setupCanvasEvents() {
       startY: pt.y
     };
   });
+
+  // Palette Drag & Drop onto canvas
+  setupPaletteDragEvents();
 }
 
 function updateCanvasTransform() {
   const container = document.getElementById("canvasContainer");
-  container.style.transform = `translate(${state.canvas.panX}px, ${state.canvas.panY}px) scale(${state.canvas.scale})`;
+  if (container) {
+    container.style.transform = `translate(${state.canvas.panX}px, ${state.canvas.panY}px) scale(${state.canvas.scale})`;
+  }
+  const wrapper = document.getElementById("canvasWrapper");
+  if (wrapper) {
+    wrapper.style.backgroundPosition = `${state.canvas.panX}px ${state.canvas.panY}px`;
+    wrapper.style.backgroundSize = `${20 * state.canvas.scale}px ${20 * state.canvas.scale}px`;
+  }
 }
 
 function setCanvasZoom(newScale) {
-  state.canvas.scale = Math.min(Math.max(newScale, 0.3), 2.5);
+  state.canvas.scale = Math.min(Math.max(newScale, 0.25), 2.5);
   updateCanvasTransform();
 }
 
@@ -745,6 +841,74 @@ function canvasAutoLayout() {
   });
   renderCanvas();
   markUnsaved();
+}
+
+function setupPaletteDragEvents() {
+  document.querySelectorAll(".palette-item").forEach(item => {
+    item.addEventListener("dragstart", (e) => {
+      const type = item.getAttribute("data-type");
+      e.dataTransfer.setData("text/plain", type);
+    });
+  });
+
+  const wrapper = document.getElementById("canvasWrapper");
+  if (!wrapper) return;
+
+  wrapper.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  });
+
+  wrapper.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData("text/plain");
+    if (type && NODE_META[type]) {
+      const rect = wrapper.getBoundingClientRect();
+      const dropX = e.clientX - rect.left;
+      const dropY = e.clientY - rect.top;
+      const canvasX = (dropX - state.canvas.panX) / state.canvas.scale;
+      const canvasY = (dropY - state.canvas.panY) / state.canvas.scale;
+      addNodeToCanvasAt(type, canvasX - 110, canvasY - 30);
+    }
+  });
+}
+
+function addNodeToCanvasAt(type, posX, posY) {
+  if (!state.currentFlow) return;
+  const id = `node_${Date.now()}`;
+  const meta = NODE_META[type] || { title: type };
+
+  const defaultData = {};
+  if (type === "start") defaultData.trigger_type = "contains";
+  if (type === "send_text") defaultData.message = "Hello! How can we help you?";
+  if (type === "condition") {
+    defaultData.field = "message.text";
+    defaultData.operator = "equals";
+    defaultData.value = "1";
+  }
+  if (type === "menu") {
+    defaultData.message = "Please select an option:";
+    defaultData.options = [
+      { id: "opt_1", label: "Option 1", value: "1", pattern: "1" },
+      { id: "opt_2", label: "Option 2", value: "2", pattern: "2" }
+    ];
+  }
+  if (type === "delay") defaultData.seconds = 2;
+  if (type === "wait_for_reply") defaultData.variable_name = "customer_reply";
+
+  const newNode = {
+    id,
+    type,
+    title: meta.title,
+    position: { x: Math.round(posX / 10) * 10, y: Math.round(posY / 10) * 10 },
+    data: defaultData
+  };
+
+  state.currentFlow.nodes.push(newNode);
+  renderCanvas();
+  selectNode(id);
+  markUnsaved();
+  showToast(`Added node: ${meta.title}`);
 }
 
 function startNodeDrag(nodeId, e) {

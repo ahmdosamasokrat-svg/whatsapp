@@ -1,0 +1,1 @@
+{"webhooks":[{"url":"http://waha-bot-builder:2004/webhook/waha","events":["message","message.any"]}],"noweb":{"markOnline":true,"store":{"enabled":true,"fullSync":false}}}

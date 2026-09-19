@@ -12,7 +12,7 @@ from database import get_db, now_iso, init_db
 import engine
 import waha
 
-app = FastAPI(title="WhatsApp Bot Flow Builder", version="1.0.0")
+app = FastAPI(title="sokrat whatsapp builder", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
