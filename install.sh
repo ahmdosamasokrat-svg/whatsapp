@@ -53,7 +53,9 @@ get_env_val() {
 
 # 1. Root check
 if [ "$(id -u)" -ne 0 ]; then
-    echo -e "${RED}[-] This script must be run as root (or via sudo).${NC}"
+    echo -e "${RED}[-] This installer requires root or sudo privileges.${NC}"
+    echo -e "${YELLOW}Please run:${NC}"
+    echo -e "  ${CYAN}${BOLD}curl -fsSL https://raw.githubusercontent.com/ahmdosamasokrat-svg/whatsapp/main/install.sh | sudo bash${NC}"
     exit 1
 fi
 
